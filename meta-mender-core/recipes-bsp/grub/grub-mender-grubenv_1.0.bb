@@ -7,7 +7,7 @@ S = "${WORKDIR}"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-FILES_${PN} += "/data/mender_grubenv.config"
+FILES_${PN} += "/data/unprotected/mender_grubenv.config"
 
 # TODO: We should probably move some of these into a repository.
 SRC_URI = " \
@@ -111,10 +111,10 @@ do_install() {
     install -m 755 ${WORKDIR}/fw_printenv ${D}/${bindir}/fw_printenv
     ln -fs fw_printenv ${D}/${bindir}/fw_setenv
 
-    mkdir -p ${D}/data
-    install -m 444 ${B}/mender_grubenv.config ${D}/data/
+    mkdir -p ${D}/data/unprotected
+    install -m 444 ${B}/mender_grubenv.config ${D}/data/unprotected
     mkdir -p ${D}${sysconfdir}
-    ln -fs /data/mender_grubenv.config ${D}${sysconfdir}/mender_grubenv.config
+    ln -fs /data/unprotected/mender_grubenv.config ${D}${sysconfdir}/mender_grubenv.config
 }
 
 do_deploy() {

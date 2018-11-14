@@ -29,7 +29,7 @@ inherit systemd
 SYSTEMD_SERVICE_${PN} = "mender.service"
 FILES_${PN} += "${systemd_unitdir}/system/mender.service \
                 ${sysconfdir}/mender.conf \
-                /data/mender/device_type \
+                /data/unprotected/mender/device_type \
                "
 
 # Go binaries produce unexpected effects that the Yocto QA mechanism doesn't
@@ -41,10 +41,13 @@ GO_IMPORT = "github.com/mendersoftware/mender"
 PACKAGECONFIG_append = "${@bb.utils.contains('DISTRO_FEATURES', 'mender-install', ' mender-install', '', d)}"
 PACKAGECONFIG_append = "${@bb.utils.contains('DISTRO_FEATURES', 'mender-uboot', ' u-boot', '', d)}"
 PACKAGECONFIG_append = "${@bb.utils.contains('DISTRO_FEATURES', 'mender-grub', ' grub', '', d)}"
+PACKAGECONFIG_append = "${@bb.utils.contains('DISTRO_FEATURES', 'mender-barebox', ' barebox', '', d)}"
 
 PACKAGECONFIG[mender-install] = ",,,mender-artifact-info ca-certificates"
 PACKAGECONFIG[u-boot] = ",,,u-boot-fw-utils"
 PACKAGECONFIG[grub] = ",,,grub-editenv grub-mender-grubenv"
+PACKAGECONFIG[barebox] = ",,,barebox-mender-fw-utils"
+
 
 do_compile() {
     GOPATH="${B}:${S}"
@@ -190,11 +193,11 @@ do_install() {
     fi
 
     if ${@bb.utils.contains('DISTRO_FEATURES', 'mender-image', 'true', 'false', d)}; then
-        # symlink /var/lib/mender to /data/mender
+        # symlink /var/lib/mender to /data/unprotected/mender
         rm -rf ${D}/${localstatedir}/lib/mender
-        ln -s /data/mender ${D}/${localstatedir}/lib/mender
+        ln -s /data/unprotected/mender ${D}/${localstatedir}/lib/mender
 
-        install -m 755 -d ${D}/data/mender
-        install -m 444 ${B}/device_type ${D}/data/mender/
+        install -m 755 -d ${D}/data/unprotected/mender
+        install -m 444 ${B}/device_type ${D}/data/unprotected/mender/
     fi
 }

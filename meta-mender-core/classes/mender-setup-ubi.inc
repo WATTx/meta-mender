@@ -14,7 +14,11 @@ MENDER_ROOTFS_PART_A_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}0"
 MENDER_ROOTFS_PART_B_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}1"
 
 # The partition number holding the data partition.
-MENDER_DATA_PART_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}2"
+MENDER_DEVICE_DATA_PART_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}2"
+MENDER_DEVICE_DATA_PART_FSTYPE_DEFAULT_mender-ubi = "ubifs"
+MENDER_RO_DATA_PART_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}3"
+MENDER_RO_DATA_PART_FSTYPE_DEFAULT_mender-ubi = "ubifs"
+MENDER_DATA_PART_DEFAULT_mender-ubi = "${MENDER_STORAGE_DEVICE_BASE}4"
 MENDER_DATA_PART_FSTYPE_DEFAULT_mender-ubi = "ubifs"
 
 # u-boot command ubifsmount requires volume name as the only argument

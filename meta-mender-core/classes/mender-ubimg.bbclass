@@ -70,6 +70,22 @@ vol_size=${MENDER_CALC_ROOTFS_SIZE}KiB
 vol_type=dynamic
 vol_name=rootfsb
 
+[device-data]
+mode=ubi
+image=${IMGDEPLOYDIR}/${IMAGE_NAME}.device-dataimg
+vol_id=2
+vol_size=${MENDER_DEVICE_DATA_PART_SIZE_MB}MiB
+vol_type=dynamic
+vol_name=device-data
+
+[secure-data]
+mode=ubi
+image=${IMGDEPLOYDIR}/${IMAGE_NAME}.secure-dataimg
+vol_id=2
+vol_size=${MENDER_RO_DATA_PART_SIZE_MB}MiB
+vol_type=dynamic
+vol_name=secure-data
+
 [data]
 mode=ubi
 image=${IMGDEPLOYDIR}/${IMAGE_NAME}.dataimg

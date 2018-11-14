@@ -43,8 +43,18 @@ MENDER_ROOTFS_PART_B_NAME ??= "${MENDER_ROOTFS_PART_B_NAME_DEFAULT}"
 MENDER_ROOTFS_PART_B_NAME_DEFAULT = "${MENDER_ROOTFS_PART_B}"
 
 # The partition number holding the data partition.
+MENDER_DEVICE_DATA_PART ??= "${MENDER_DEVICE_DATA_PART_DEFAULT}"
+MENDER_DEVICE_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}4"
+MENDER_DEVICE_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}${@bb.utils.contains('MENDER_BOOT_PART_SIZE_MB', '0', '3', '4', d)}"
+
+# The partition number holding the data partition.
+MENDER_RO_DATA_PART ??= "${MENDER_RO_DATA_PART_DEFAULT}"
+MENDER_RO_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}5"
+MENDER_RO_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}${@bb.utils.contains('MENDER_BOOT_PART_SIZE_MB', '0', '4', '5', d)}"
+
+# The partition number holding the data partition.
 MENDER_DATA_PART ??= "${MENDER_DATA_PART_DEFAULT}"
-MENDER_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}${@bb.utils.contains('MENDER_BOOT_PART_SIZE_MB', '0', '3', '4', d)}"
+MENDER_DATA_PART_DEFAULT = "${MENDER_STORAGE_DEVICE_BASE}${@bb.utils.contains('MENDER_BOOT_PART_SIZE_MB', '0', '5', '6', d)}"
 
 # The name of of the MTD part holding your UBI volumes.
 MENDER_MTD_UBI_DEVICE_NAME ??= "${MENDER_MTD_UBI_DEVICE_NAME_DEFAULT}"
@@ -53,6 +63,10 @@ MENDER_MTD_UBI_DEVICE_NAME_DEFAULT = ""
 # Filesystem type of data partition. This configuration is used in fstab. Most
 # filesystems can be auto detected, but some can not and hence we allow the
 # user to override this.
+MENDER_DEVICE_DATA_PART_FSTYPE ??= "${MENDER_DEVICE_DATA_PART_FSTYPE_DEFAULT}"
+MENDER_DEVICE_DATA_PART_FSTYPE_DEFAULT = "auto"
+MENDER_RO_DATA_PART_FSTYPE ??= "${MENDER_RO_DATA_PART_FSTYPE_DEFAULT}"
+MENDER_RO_DATA_PART_FSTYPE_DEFAULT = "auto"
 MENDER_DATA_PART_FSTYPE ??= "${MENDER_DATA_PART_FSTYPE_DEFAULT}"
 MENDER_DATA_PART_FSTYPE_DEFAULT = "auto"
 MENDER_BOOT_PART_FSTYPE ??= "${MENDER_BOOT_PART_FSTYPE_DEFAULT}"
@@ -81,9 +95,14 @@ MENDER_DEVICE_TYPES_COMPATIBLE_DEFAULT_append_beaglebone-yocto = " beaglebone"
 MENDER_STORAGE_TOTAL_SIZE_MB ??= "${MENDER_STORAGE_TOTAL_SIZE_MB_DEFAULT}"
 MENDER_STORAGE_TOTAL_SIZE_MB_DEFAULT ?= "1024"
 
+
 # Size of the data partition, which is preserved across updates.
+MENDER_DEVICE_DATA_PART_SIZE_MB ??= "${MENDER_DEVICE_DATA_PART_SIZE_MB_DEFAULT}"
+MENDER_DEVICE_DATA_PART_SIZE_MB_DEFAULT = "16"
+MENDER_RO_DATA_PART_SIZE_MB ??= "${MENDER_RO_DATA_PART_SIZE_MB_DEFAULT}"
+MENDER_RO_DATA_PART_SIZE_MB_DEFAULT = "64"
 MENDER_DATA_PART_SIZE_MB ??= "${MENDER_DATA_PART_SIZE_MB_DEFAULT}"
-MENDER_DATA_PART_SIZE_MB_DEFAULT = "128"
+MENDER_DATA_PART_SIZE_MB_DEFAULT = "16"
 
 # Size of the first (FAT) partition, that contains the bootloader
 MENDER_BOOT_PART_SIZE_MB ??= "${MENDER_BOOT_PART_SIZE_MB_DEFAULT}"
@@ -204,6 +223,10 @@ python() {
 
         # Use Mender together with U-Boot.
         'mender-uboot',
+
+        # Use Mender together with barebox.
+#        'mender-barebox',
+
     }
 
     mfe = d.getVar('MENDER_FEATURES_ENABLE')
@@ -234,6 +257,10 @@ python() {
         bb.fatal("IMAGE_BOOTLOADER_FILE is deprecated. Please define MENDER_IMAGE_BOOTLOADER_FILE instead.")
     if d.getVar('IMAGE_BOOTLOADER_BOOTSECTOR_OFFSET', True):
         bb.fatal("IMAGE_BOOTLOADER_BOOTSECTOR_OFFSET is deprecated. Please define MENDER_IMAGE_BOOTLOADER_BOOTSECTOR_OFFSET instead.")
+    if d.getVar('MENDER_DEVICE_DATA_PART_DIR'):
+        bb.fatal("MENDER_DEVICE_DATA_PART_DIR is deprecated. Please use recipes to add files directly to /data instead.")
+    if d.getVar('MENDER_RO_DATA_PART_DIR'):
+        bb.fatal("MENDER_RO_DATA_PART_DIR is deprecated. Please use recipes to add files directly to /data instead.")
     if d.getVar('MENDER_DATA_PART_DIR'):
         bb.fatal("MENDER_DATA_PART_DIR is deprecated. Please use recipes to add files directly to /data instead.")
 }
@@ -320,3 +347,5 @@ include mender-setup-install.inc
 include mender-setup-systemd.inc
 include mender-setup-ubi.inc
 include mender-setup-uboot.inc
+#include mender-setup-barebox.inc
+

@@ -1,6 +1,6 @@
 require u-boot-mender-common.inc
 
-FILES_${PN}_append_mender-uboot = " /data/u-boot/fw_env.config"
+FILES_${PN}_append_mender-uboot = " /data/unprotected/u-boot/fw_env.config"
 
 do_compile_append_mender-uboot() {
     alignment_bytes=${MENDER_PARTITION_ALIGNMENT}
@@ -18,8 +18,8 @@ do_compile_append_mender-uboot() {
 
 do_install_append_mender-uboot() {
     install -d -m 755 ${D}${sysconfdir}
-    ln -sf /data/u-boot/fw_env.config ${D}${sysconfdir}/fw_env.config
+    ln -sf /data/unprotected/u-boot/fw_env.config ${D}${sysconfdir}/fw_env.config
 
-    install -d ${D}/data/u-boot
-    install -m 0644 ${WORKDIR}/fw_env.config ${D}/data/u-boot/fw_env.config
+    install -d ${D}/data/unprotected/u-boot
+    install -m 0644 ${WORKDIR}/fw_env.config ${D}/data/unprotected/u-boot/fw_env.config
 }

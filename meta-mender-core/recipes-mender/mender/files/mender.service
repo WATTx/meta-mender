@@ -6,7 +6,7 @@ After=systemd-resolved.service
 Type=idle
 User=root
 Group=root
-ExecStartPre=/bin/mkdir -p -m 0700 /data/mender
+ExecStartPre=/bin/mkdir -p -m 0700 /data/unprotected/mender
 ExecStart=/usr/bin/mender -daemon
 Restart=on-abort
 

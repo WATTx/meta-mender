@@ -34,8 +34,11 @@ mender_update_fstab_file() {
         fi
     fi
 
-    mkdir -p ${IMAGE_ROOTFS}/data
-    printf "%-20s %-20s %-10s %-21s %-2s %s\n" ${MENDER_DATA_PART} /data ${MENDER_DATA_PART_FSTYPE} defaults 0 0 >> ${IMAGE_ROOTFS}${sysconfdir}/fstab
+    mkdir -p ${IMAGE_ROOTFS}/data/device ${IMAGE_ROOTFS}/data/secure ${IMAGE_ROOTFS}/data/unprotected
+    printf "%-20s %-20s %-10s %-21s %-2s %s\n" ${MENDER_DEVICE_DATA_PART} /data/device ${MENDER_DEVICE_DATA_PART_FSTYPE} ro 0 0 >> ${IMAGE_ROOTFS}${sysconfdir}/fstab
+    printf "%-20s %-20s %-10s %-21s %-2s %s\n" ${MENDER_RO_DATA_PART} /data/secure ${MENDER_RO_DATA_PART_FSTYPE} defaults 0 0 >> ${IMAGE_ROOTFS}${sysconfdir}/fstab
+    printf "%-20s %-20s %-10s %-21s %-2s %s\n" ${MENDER_DATA_PART} /data/unprotected ${MENDER_DATA_PART_FSTYPE} defaults 0 0 >> ${IMAGE_ROOTFS}${sysconfdir}/fstab
+
 }
 
 # Setup state script version file.
@@ -47,7 +50,7 @@ mender_create_scripts_version_file() {
     echo -n "${MENDER_STATE_SCRIPTS_VERSION}" > ${IMAGE_ROOTFS}${sysconfdir}/mender/scripts/version
 }
 
-IMAGE_ROOTFS_EXCLUDE_PATH_append_mender-image = " data/"
+#IMAGE_ROOTFS_EXCLUDE_PATH_append_mender-image = " data/device data/secure data/unprotected "
 
 
 ################################################################################

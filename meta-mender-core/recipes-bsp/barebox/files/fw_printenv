@@ -1,0 +1,166 @@
+#!/bin/sh
+
+# This script mimicks the behavior of fw_printenv/fw_setenv from U-Boot.
+
+# Here is how the environment works. We've got three problems to overcome:
+#   1. GRUB doesn't support checksumming the environment.
+#   2. There is a hashsum command, but it can only be used to verify checksums,
+#      not generate them.
+#   3. We want to store the environment on the boot partition, which is FAT, and
+#      can therefore be corrupted.
+
+# For problem 1 and 2, we need to solve them together. We can have multiple
+# environment files, so the solution is to use an environment file with a known
+# checksum as the lock file for the other non-checksummed file that holds the
+# payload. While we edit, we give the lock content that won't pass the checksum.
+
+# Regarding problem 3, storing the environment on the data partition was
+# considered, since it is typically ext4, but it seems wrong to store this very
+# boot specific information here, especially if we consider things like being
+# able to factory reset the data partition without losing which partition should
+# boot. So what we do is to put two redundant environment files in two different
+# directories on the boot partition. This should ensure that even if the Linux
+# vfat driver updates the modification time of the file, and the system crashes
+# in the middle of writing that sector, only that directory gets corrupted. The
+# other one should be fine. It can't be guaranteed this will help against
+# absolutely all forms of corruption, but should cover the vast majority of
+# cases, and one would have to be really unlucky to still get an unusable
+# environment.
+
+MENDER_BOOT_ENV=/uboot/mender_boot_config.env
+
+if [ "`basename $0`" = "fw_setenv" ]; then
+    FW_SETENV=1
+else
+    FW_SETENV=0
+fi
+
+usage() {
+    if [ $FW_SETENV = 1 ]; then
+        cat <<EOF
+`basename $0` [VARIABLES ...]
+Sets variables in the mender-grubenv environment.
+
+ -h, --help     Display help
+ -s, --script   Batch mode to write multiple variables
+
+Script Syntax:
+  key [space] value
+  lines starting with '#' are treated as comment
+
+  A variable without value will be deleted. Any number of spaces are
+  allowed between key and value. Space inside of the value is treated
+  as part of the value itself.
+EOF
+    else
+        cat <<EOF
+`basename $0` [VARIABLE ...]
+Print variables from the mender-grubenv environment.
+
+ -h, --help     Display help
+EOF
+    fi
+}
+
+make_evalable() {
+    # Make string appropriate for eval'ing.
+    sed -e 's/'\''/'\'\\\\\'\''/g; s/\\\$/\\\$/g; s/=/='\''/; s/$/'\''/'
+}
+
+setenv() {
+    while [ -n "$1" ]; do
+        if [ -n "$SCRIPT" ]; then
+            echo "--script used together with variables." 1>&2
+            exit 1
+        fi
+        case "$1" in
+            -s|--script)
+                shift
+                SCRIPT="$1"
+                if [ -z "$SCRIPT" ]; then
+                    echo "No script given to --script option." 1>&2
+                    exit 1
+                fi
+                ;;
+            -h|--help)
+                usage
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "$SCRIPT" ]; then
+        VARS="$1"
+        shift
+        for arg in "$@"; do
+            VARS="$VARS $arg"
+        done
+    elif [ "$SCRIPT" = "-" ]; then
+        # Read from stdin.
+        VARS="`cat`"
+    else
+        # Read from a file.
+        VARS="`cat $SCRIPT`"
+    fi
+
+    if [ -z "$VARS" ]; then
+        echo "Must specify at least one variable assignment." 1>&2
+        exit 1
+    fi
+
+    # Split in newlines, not spaces.
+    IFS='
+'
+
+    # Make string appropriate for eval'ing.
+    VARS="`echo "$VARS" | sed -ne '/^#/n; s/  */=/; /=/!s/$/=/; p' | make_evalable`"
+
+    set -e
+
+    for var in ${VARS}; do
+        var_name=${var%=*}
+        if [[ -n "$(grep ${var_name} ${MENDER_BOOT_ENV})" ]]
+        then
+          sed -i "s/${var_name}=.*/${var}/" ${MENDER_BOOT_ENV}
+        else
+          echo ${var} >> ${MENDER_BOOT_ENV}
+        fi
+    done
+}
+
+printenv() {
+    NO_ARGS=1
+    while [ -n "$1" ]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 1
+                ;;
+            *)
+                NO_ARGS=0
+                break
+                ;;
+        esac
+    done
+
+    VARS="`cat ${MENDER_BOOT_ENV}`"
+    eval "`echo "$VARS" | make_evalable`"
+
+    if [ $NO_ARGS = 1 ]; then
+        echo "$VARS"
+    else
+        for var in "$@"; do
+            eval echo \"$var=\${$var}\"
+        done
+    fi
+}
+
+if [ $FW_SETENV = 1 ]; then
+    setenv "$@"
+else
+    printenv "$@"
+fi
